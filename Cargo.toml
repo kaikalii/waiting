@@ -1,6 +1,6 @@
 [package]
 edition = '2021'
-name = 'progress_iter'
+name = 'waiting'
 version = '0.1.0'
 
 [dependencies]

@@ -1,6 +1,6 @@
 use std::{thread::sleep, time::Duration};
 
-use progress_iter::*;
+use waiting::*;
 
 fn main() {
     const SLEEP_DUR: Duration = Duration::from_millis(10);
