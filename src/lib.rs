@@ -9,7 +9,6 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 pub struct Progress<I> {
     iter: I,
     progress: usize,
-    bar_text: String,
     text_style: ProgressStyle,
     bar_style: BarStyle,
     title: String,
@@ -17,8 +16,6 @@ pub struct Progress<I> {
     start_time: Option<Instant>,
     print_elapsed: bool,
     clear_on_end: bool,
-    bar_prefix: String,
-    bar_suffix: String,
 }
 
 impl<I> Progress<I>
@@ -29,7 +26,6 @@ where
         let prog = Progress {
             iter,
             progress: 0,
-            bar_text: '█'.into(),
             text_style: ProgressStyle::default(),
             bar_style: BarStyle::default(),
             title: String::new(),
@@ -37,18 +33,9 @@ where
             start_time: None,
             clear_on_end: true,
             print_elapsed: false,
-            bar_prefix: String::new(),
-            bar_suffix: String::new(),
         };
         prog.print_progress();
         prog
-    }
-    pub fn bar<T>(mut self, text: T) -> Self
-    where
-        T: Into<String>,
-    {
-        self.bar_text = text.into();
-        self
     }
     pub fn title<S>(mut self, title: S) -> Self
     where
@@ -75,15 +62,6 @@ where
     }
     pub fn with_elapsed(mut self) -> Self {
         self.print_elapsed = true;
-        self
-    }
-    pub fn bar_ends<P, S>(mut self, prefix: P, suffix: S) -> Self
-    where
-        P: Into<String>,
-        S: Into<String>,
-    {
-        self.bar_prefix = prefix.into();
-        self.bar_suffix = suffix.into();
         self
     }
     fn print_progress(&self) {
@@ -144,12 +122,15 @@ where
         );
         let width = term_size::dimensions()
             .map_or(40, |(w, _)| w)
-            .saturating_sub(title.width() + self.bar_prefix.width() + self.bar_suffix.width())
+            .saturating_sub(
+                title.width() + self.bar_style.left_end.width() + self.bar_style.right_end.width(),
+            )
             .min(self.max_width);
-        print!("{}{}", title, self.bar_prefix);
-        let chars_count = self.bar_text.chars().count() as isize;
+        print!("{}{}", title, self.bar_style.left_end);
+        let chars_count = self.bar_style.text.chars().count() as isize;
         let avg_bar_char_width = self
-            .bar_text
+            .bar_style
+            .text
             .chars()
             .map(|c| c.width().unwrap_or(1) as f32)
             .sum::<f32>()
@@ -162,7 +143,8 @@ where
             for i in 0..progress_width {
                 print!(
                     "{}",
-                    self.bar_text
+                    self.bar_style
+                        .text
                         .chars()
                         .nth(modulus(i as isize + rotation, chars_count) as usize)
                         .unwrap()
@@ -173,7 +155,7 @@ where
             }
         } else {
             let bar_frac = self.bar_style.slide_ratio.min(1.0);
-            let mut bar_width = (width as f32 * bar_frac).round() as usize;
+            let mut bar_width = (width as f32 * bar_frac).round().max(1.0) as usize;
             let offset = (match self.bar_style.slide {
                 SlideStyle::Smooth => -(elapsed * self.bar_style.slide_speed).cos() * 0.5 + 0.5,
                 SlideStyle::Linear => {
@@ -194,7 +176,8 @@ where
             for i in 0..(wrapped_bar_width as f32 / avg_bar_char_width).round() as usize {
                 print!(
                     "{}",
-                    self.bar_text
+                    self.bar_style
+                        .text
                         .chars()
                         .nth(modulus(i as isize + rotation, chars_count) as usize)
                         .unwrap()
@@ -206,7 +189,8 @@ where
             for i in 0..(bar_width as f32 / avg_bar_char_width).round() as usize {
                 print!(
                     "{}",
-                    self.bar_text
+                    self.bar_style
+                        .text
                         .chars()
                         .nth(modulus(i as isize + rotation + offset as isize, chars_count) as usize)
                         .unwrap()
@@ -216,7 +200,7 @@ where
                 print!(" ");
             }
         }
-        print!("{}", self.bar_suffix);
+        print!("{}", self.bar_style.right_end);
         let _ = stdout().flush();
     }
 }
@@ -246,21 +230,27 @@ impl Default for ProgressStyle {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct BarStyle {
+    pub text: String,
     pub slide: SlideStyle,
     pub slide_speed: f32,
     pub rotation_speed: f32,
     pub slide_ratio: f32,
+    pub left_end: String,
+    pub right_end: String,
 }
 
 impl Default for BarStyle {
     fn default() -> Self {
         BarStyle {
+            text: '█'.into(),
             slide: SlideStyle::default(),
             slide_speed: 1.0,
             rotation_speed: 0.0,
             slide_ratio: 1.0 / 6.0,
+            left_end: String::new(),
+            right_end: String::new(),
         }
     }
 }

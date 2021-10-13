@@ -5,7 +5,7 @@ use waiting::*;
 fn main() {
     const SLEEP_DUR: Duration = Duration::from_millis(10);
 
-    for _ in (0..200)
+    for _ in (0..150)
         .progress()
         .title("Fraction")
         .text_style(ProgressStyle::Fraction)
@@ -13,39 +13,61 @@ fn main() {
         sleep(SLEEP_DUR);
     }
 
-    for _ in (0..200)
+    for _ in (0..150)
         .progress()
-        .title("Percent")
+        .title("Percent with Custom Bar")
         .text_style(ProgressStyle::Percent)
-    {
-        sleep(SLEEP_DUR);
-    }
-
-    for _ in (0..300)
-        .progress()
-        .title("Custom Bar")
-        .text_style(ProgressStyle::Bare)
         .bar_style(BarStyle {
-            rotation_speed: 20.0,
+            text: "--==##==".into(),
+            left_end: "[".into(),
+            right_end: "]".into(),
             ..Default::default()
         })
-        .bar("____/‾‾‾‾\\")
-        .bar_ends("[start: ", ":done]")
     {
         sleep(SLEEP_DUR);
     }
 
     let mut i = 0;
+    for _ in (0..).progress().title("Unknown Size").with_elapsed() {
+        i += 1;
+        sleep(SLEEP_DUR);
+        if i == 300 {
+            break;
+        }
+    }
+
+    let mut i = 0;
     for _ in (0..)
         .progress()
-        .title("Unknown Size")
-        .bar("♠♥♣♦")
-        .bar_ends("[", "]")
+        .title("Unknown Size Smooth")
+        .bar_style(BarStyle {
+            slide: SlideStyle::Smooth,
+            ..Default::default()
+        })
         .with_elapsed()
     {
         i += 1;
         sleep(SLEEP_DUR);
-        if i == 500 {
+        if i == 400 {
+            break;
+        }
+    }
+
+    let mut i = 0;
+    for _ in (0..)
+        .progress()
+        .title("Unknown Size with WAVE")
+        .with_elapsed()
+        .bar_style(BarStyle {
+            text: "▁▁▂▂▃▄▅▆▇▇███▇▇▆▅▄▃▂▂▁".into(),
+            rotation_speed: -30.0,
+            slide_ratio: 1.0,
+            ..Default::default()
+        })
+    {
+        i += 1;
+        sleep(SLEEP_DUR);
+        if i == 300 {
             break;
         }
     }
