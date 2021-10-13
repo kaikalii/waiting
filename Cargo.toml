@@ -1,0 +1,8 @@
+[package]
+edition = '2021'
+name = 'progress_iter'
+version = '0.1.0'
+
+[dependencies]
+term_size = '1.0.0-beta1'
+unicode-width = '0.1.9'
